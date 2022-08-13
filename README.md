@@ -7,7 +7,7 @@ Path, a subgame of [Last Call BBS](https://zachtronics.com/last-call-bbs/).
 
 To validate and compute metrics for your own save file, use
 ```
-python -m xbpgh_sim validate_all <save_file_path>
+python -m xbpgh_sim validate_all [--json] <save_file_path>
 ```
 Save files are usually located at:
 ```
