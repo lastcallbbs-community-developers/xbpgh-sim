@@ -231,7 +231,8 @@ class Rule:
         elif self.reaction == Reaction.FUSE:
             assert self.fuse_dir is not None
             n_loc = loc + self.fuse_dir.delta()
-            h[2 * n_loc.x][2 * n_loc.y] = self.target_type.to_symbol()
+            if h[2 * n_loc.x][2 * n_loc.y] == CellType.IGNORE.to_symbol():
+                h[2 * n_loc.x][2 * n_loc.y] = CellType.ANY.to_symbol()
             h[loc.x + n_loc.x][loc.y + n_loc.y] = "-" if loc.x != n_loc.x else "|"
 
         elif self.reaction == Reaction.SPECIALIZE:
