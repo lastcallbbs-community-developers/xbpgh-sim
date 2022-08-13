@@ -7,7 +7,7 @@ Path, a subgame of [Last Call BBS](https://zachtronics.com/last-call-bbs/).
 
 To validate and compute metrics for your own save file, use
 ```
-python -m main <save_file_path>
+python -m main validate_all <save_file_path>
 ```
 Save files are usually located at:
 ```
@@ -16,13 +16,19 @@ Linux: $HOME/.local/share/Last Call BBS/<user-id>/save.dat
 ```
 Alternatively, use `-` as the path to read from stdin.
 
+To simulate/visualize a particular level, use
+```
+python -m main simulate <level_name> <slot_number> <save_file_path>
+```
+Run `python -m main` to see detailed usage.
+
 ## Technical Notes
 
 ### Cell types
 
 We use these symbols/names for the various types of cells, in the order of the game UI:
 ```
-"_": CellType.NONE,
+" ": CellType.IGNORE,
 "*": CellType.SEED,
 "f": CellType.FLESH,
 "M": CellType.FLESH_MUSCLE,
@@ -35,6 +41,8 @@ We use these symbols/names for the various types of cells, in the order of the g
 "O": CellType.SKIN_EYE,
 "█": CellType.METAL,
 "X": CellType.METAL,  # Alternative
+"?": CellType.ANY,
+"_": CellType.NONE,
 ```
 
 ### Save file format

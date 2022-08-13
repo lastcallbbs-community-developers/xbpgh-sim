@@ -50,13 +50,51 @@ class CellType(Enum):
     ANY = 12
     NONE = 13
 
-    def is_living(self):
+    def is_living(self) -> bool:
         return self not in {
             CellType.IGNORE,
             CellType.METAL,
             CellType.ANY,
             CellType.NONE,
         }
+
+    def to_symbol(self) -> str:
+        return {
+            CellType.IGNORE: " ",
+            CellType.SEED: "*",
+            CellType.FLESH: "f",
+            CellType.FLESH_MUSCLE: "M",
+            CellType.FLESH_HEART: "H",
+            CellType.FLESH_FAT: "F",
+            CellType.BONE: "b",
+            CellType.BONE_SPINE: "B",
+            CellType.SKIN: "s",
+            CellType.SKIN_HAIR: "W",
+            CellType.SKIN_EYE: "O",
+            CellType.METAL: "█",
+            CellType.ANY: "?",
+            CellType.NONE: "_",
+        }[self]
+
+    @staticmethod
+    def from_symbol(s: str) -> CellType:
+        return {
+            " ": CellType.IGNORE,
+            "*": CellType.SEED,
+            "f": CellType.FLESH,
+            "M": CellType.FLESH_MUSCLE,
+            "H": CellType.FLESH_HEART,
+            "F": CellType.FLESH_FAT,
+            "b": CellType.BONE,
+            "B": CellType.BONE_SPINE,
+            "s": CellType.SKIN,
+            "W": CellType.SKIN_HAIR,
+            "O": CellType.SKIN_EYE,
+            "█": CellType.METAL,
+            "X": CellType.METAL,  # Alternative
+            "?": CellType.ANY,
+            "_": CellType.NONE,
+        }[s]
 
 
 @unique
@@ -112,6 +150,10 @@ class Rule:
                 self.reaction == Reaction.IGNORE
             ), "Rules with no target must have no reaction"
 
+        assert (self.divide_dir is not None) == (self.reaction == Reaction.DIVIDE)
+        assert (self.fuse_dir is not None) == (self.reaction == Reaction.FUSE)
+        assert (self.spec_type is not None) == (self.reaction == Reaction.SPECIALIZE)
+
         # Type-specific checks
         if self.target_type == CellType.BONE_SPINE:
             assert (
@@ -159,6 +201,56 @@ class Rule:
                     CellType.METAL,
                     CellType.NONE,
                 }, "Cannot fuse into non-cell neighbor"
+
+    def visualize(self) -> str:
+        g = [[" " for _ in range(5)] for _ in range(5)]
+
+        loc = Coords(1, 1)
+        g[2 * loc.x][2 * loc.y] = self.target_type.to_symbol()
+
+        n_loc = loc + self.neighbor_dir.delta()
+        g[2 * n_loc.x][2 * n_loc.y] = self.neighbor_type.to_symbol()
+
+        h = [[" " for _ in range(5)] for _ in range(5)]
+
+        loc = Coords(1, 1)
+        h[2 * loc.x][2 * loc.y] = self.target_type.to_symbol()
+
+        n_loc = loc + self.neighbor_dir.delta()
+        h[2 * n_loc.x][2 * n_loc.y] = self.neighbor_type.to_symbol()
+
+        if self.reaction == Reaction.DIVIDE:
+            assert self.divide_dir is not None
+            n_loc = loc + self.divide_dir.delta()
+            h[2 * n_loc.x][2 * n_loc.y] = self.target_type.to_symbol()
+            h[loc.x + n_loc.x][loc.y + n_loc.y] = "-" if loc.x != n_loc.x else "|"
+
+        elif self.reaction == Reaction.DIE:
+            h[2 * loc.x][2 * loc.y] = CellType.NONE.to_symbol()
+
+        elif self.reaction == Reaction.FUSE:
+            assert self.fuse_dir is not None
+            n_loc = loc + self.fuse_dir.delta()
+            h[2 * n_loc.x][2 * n_loc.y] = self.target_type.to_symbol()
+            h[loc.x + n_loc.x][loc.y + n_loc.y] = "-" if loc.x != n_loc.x else "|"
+
+        elif self.reaction == Reaction.SPECIALIZE:
+            assert self.spec_type is not None
+            h[2 * loc.x][2 * loc.y] = self.spec_type.to_symbol()
+
+        g_lines = (
+            ["┌" + "─" * 5 + "┐"]
+            + ["│" + "".join(s) + "│" for s in zip(*g)][::-1]
+            + ["└" + "─" * 5 + "┘"]
+        )
+        mid = [" ", " ", " ", ">", " ", " ", " "]
+        h_lines = (
+            ["┌" + "─" * 5 + "┐"]
+            + ["│" + "".join(s) + "│" for s in zip(*h)][::-1]
+            + ["└" + "─" * 5 + "┘"]
+        )
+
+        return "\n".join("".join(t) for t in zip(g_lines, mid, h_lines))
 
 
 @dataclass
@@ -224,20 +316,7 @@ class State:
         g = [[" " for _ in range(9)] for _ in range(7)]
         for x in range(4):
             for y in range(5):
-                g[2 * x][2 * y] = {
-                    CellType.NONE: "_",
-                    CellType.SEED: "*",
-                    CellType.FLESH: "f",
-                    CellType.FLESH_MUSCLE: "M",
-                    CellType.FLESH_HEART: "H",
-                    CellType.FLESH_FAT: "F",
-                    CellType.BONE: "b",
-                    CellType.BONE_SPINE: "B",
-                    CellType.SKIN: "s",
-                    CellType.SKIN_HAIR: "W",
-                    CellType.SKIN_EYE: "O",
-                    CellType.METAL: "█",
-                }[self.cell_types[x][y]]
+                g[2 * x][2 * y] = self.cell_types[x][y].to_symbol()
 
         for x in range(3):
             for y in range(5):
@@ -258,10 +337,7 @@ class State:
 
     @classmethod
     def from_visualize(cls, s: str) -> State:
-        """Initialize a state from a 9x7 ASCII art block, possibly with a border
-
-        See the dictionary for cell names; X can be used instead of "█" for METAL
-        """
+        """Initialize a state from a 9x7 ASCII art block, possibly with a border"""
         g = list(zip(*reversed(s.split("\n"))))
         if len(g) == 9 and all(len(a) == 11 for a in g):
             g = [a[1:-1] for a in g[1:-1]]
@@ -269,24 +345,7 @@ class State:
 
         return cls(
             cell_types=[
-                [
-                    {
-                        "_": CellType.NONE,
-                        "*": CellType.SEED,
-                        "f": CellType.FLESH,
-                        "M": CellType.FLESH_MUSCLE,
-                        "H": CellType.FLESH_HEART,
-                        "F": CellType.FLESH_FAT,
-                        "b": CellType.BONE,
-                        "B": CellType.BONE_SPINE,
-                        "s": CellType.SKIN,
-                        "W": CellType.SKIN_HAIR,
-                        "O": CellType.SKIN_EYE,
-                        "█": CellType.METAL,
-                        "X": CellType.METAL,  # Alternative
-                    }[g[2 * x][2 * y]]
-                    for y in range(5)
-                ]
+                [CellType.from_symbol(g[2 * x][2 * y]) for y in range(5)]
                 for x in range(4)
             ],
             horz_connected=[
