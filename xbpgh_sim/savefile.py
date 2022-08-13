@@ -10,7 +10,7 @@ __all__ = ["parse_solution", "dump_solution", "parse_save_file"]
 
 def parse_solution(save_string: str) -> Solution:
     """parses a decompressed solution"""
-    dat = zlib.decompress(base64.b64decode(save_string))
+    dat = zlib.decompress(base64.b64decode(save_string, validate=True))
 
     def pop_int(b):
         nonlocal dat
