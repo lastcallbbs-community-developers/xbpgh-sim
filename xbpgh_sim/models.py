@@ -259,6 +259,7 @@ class Solution:
     rules: list[Rule]
     start_pos: Coords
     metal_coords: list[Coords]
+    save_string: Optional[str] = None
 
 
 @dataclass

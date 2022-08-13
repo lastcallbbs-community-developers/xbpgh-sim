@@ -8,8 +8,9 @@ from .levels import LEVELS
 __all__ = ["parse_solution", "dump_solution", "parse_save_file"]
 
 
-def parse_solution(dat: bytes) -> Solution:
+def parse_solution(save_string: str) -> Solution:
     """parses a decompressed solution"""
+    dat = zlib.decompress(base64.b64decode(save_string))
 
     def pop_int(b):
         nonlocal dat
@@ -68,10 +69,10 @@ def parse_solution(dat: bytes) -> Solution:
 
     assert len(dat) == 0
 
-    return Solution(rules, start_loc, metal_coords)
+    return Solution(rules, start_loc, metal_coords, save_string=save_string)
 
 
-def dump_solution(solution: Solution) -> bytes:
+def dump_solution(solution: Solution) -> str:
     dat = b""
 
     def push_int(b, v):
@@ -111,22 +112,23 @@ def dump_solution(solution: Solution) -> bytes:
         push_int(4, coords.x)
         push_int(4, coords.y)
 
-    return dat
+    return base64.b64encode(zlib.compress(dat)).decode("ascii")
 
 
 def parse_save_file(f) -> dict[int, dict[int, Solution]]:
     solutions = {level.level_id: {} for level in LEVELS}
     for line in f:
+        line = line.rstrip("\n")
         if " = " in line:
             key, val = line.split(" = ")
             key = key.split(".")
+            val = val.strip()
             if key[0] == "Toronto" and key[1] == "Solution":
                 level_id = int(key[2])
                 save_slot = int(key[3])
 
-                dat = zlib.decompress(base64.b64decode(val))
-                solution = parse_solution(dat)
+                solution = parse_solution(val)
                 # Check round-tripping the solution
-                #assert dat == dump_solution(solution)
+                # assert dat == dump_solution(solution)
                 solutions[level_id][save_slot] = solution
     return solutions

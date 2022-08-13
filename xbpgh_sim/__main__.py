@@ -37,7 +37,9 @@ def get_level_from_name(level_name) -> Optional[Level]:
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="python -m xbpgh_sim", description="Simulate X'BPGH solutions")
+    parser = argparse.ArgumentParser(
+        prog="python -m xbpgh_sim", description="Simulate X'BPGH solutions"
+    )
     subparsers = parser.add_subparsers()
 
     parser_validate_all = subparsers.add_parser(
@@ -48,6 +50,9 @@ def main():
     )
     parser_validate_all.add_argument(
         "--json", action="store_true", help="Use JSON output mode"
+    )
+    parser_validate_all.add_argument(
+        "--include-solution", action="store_true", help="Include the solution save"
     )
 
     def run_validate_all(args):
@@ -65,6 +70,11 @@ def main():
                     json_result.append(
                         dict(
                             level_name=level.level_name,
+                            **(
+                                dict(solution=solution.save_string)
+                                if args.include_solution
+                                else {}
+                            ),
                             **dataclasses.asdict(result.metrics),
                         )
                     )
