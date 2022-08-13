@@ -134,13 +134,14 @@ SolutionString is is the binary solution file, zlib compressed and base64 encode
 
 Decompressed solutions are variable-length encoded, using mostly little-endian (LE) 32-bit integers, and have the following high level structure
 ```
-header: 4-byte LE int, always 1003 (0xEB 0x03 0x00 0x00)
+save_version: 4-byte LE int, 1002 or 1003 (0xEB 0x03 0x00 0x00)
 
 num_rules: 4-byte LE int, always 16 (0x10 0x00 0x00 0x00)
 rules: <num_rules = 16> rules in priority order, using a variable-length encoding, see below
 
 start_coords: pair of 4-byte LE ints (x, y)
 
+In version 1003 only:
 num_metal_coords: 4-byte LE int, always 0 except for level editor
 metal_coords: <num_metal_coords> pairs of 4-byte LE ints (x, y)
 ```
