@@ -1,5 +1,7 @@
 import sys
 
+import argparse
+import json
 import dataclasses
 from typing import Optional
 
@@ -9,24 +11,13 @@ from .levels import *
 from .simulator import *
 
 
-USAGE = """\
-Usage:
-  python -m main validate_all <save_file_path>
-  python -m main simulate <level_name> <slot_number> <save_file_path>
-
-<save_file_path> can be "-" for stdin
-<level_name> can be be "1-2" for the 2nd level in the 1st column of the base game, or "B4-3" for the 3rd level in the 4th column of the bonus levels, or a bonus level name (e.g. "Clark"). Use "B5-3" or "editor" for the puzzle editor.
-<slot_number> should be 0, 1, 2, or 3 (top-left, top-right, bottom-left, or bottom-right)
-"""
-
-
 def get_level_from_name(level_name) -> Optional[Level]:
     level_name = level_name.strip().lower()
     for level in LEVELS:
         if level_name == level.level_name.lower():
             return level
 
-    if 'editor' in level_name:
+    if "editor" in level_name:
         return LEVELS[-1]
 
     # Bonus level last names
@@ -35,78 +26,93 @@ def get_level_from_name(level_name) -> Optional[Level]:
             return level
 
     # Try to parse 1-2, possibly with a leading "b" or "bonus"
-    digits = [c for c in level_name if '0' <= c <= '9']
+    digits = [c for c in level_name if "0" <= c <= "9"]
     if len(digits) == 2:
         col, row = map(int, digits)
-        return LEVELS[(15 if level_name.startswith('b') else 0) + (col - 1) * 3 + (row - 1)]
+        return LEVELS[
+            (15 if level_name.startswith("b") else 0) + (col - 1) * 3 + (row - 1)
+        ]
 
-    return None
+    raise ValueError(f"Could not parse level name {level_name}")
 
 
 def main():
-    if len(sys.argv) == 1:
-        print(USAGE)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(prog="python -m xbpgh_sim", description="Simulate X'BPGH solutions")
+    subparsers = parser.add_subparsers()
 
-    op = sys.argv[1]
-    if op == "validate_all":
-        if len(sys.argv) != 3:
-            print(USAGE)
-            sys.exit(1)
-        fname = sys.argv[2]
+    parser_validate_all = subparsers.add_parser(
+        "validate_all", help="Validate all solutions in a save file"
+    )
+    parser_validate_all.add_argument(
+        "save_file", type=argparse.FileType(), help="Save file path (or - for stdin)"
+    )
+    parser_validate_all.add_argument(
+        "--json", action="store_true", help="Use JSON output mode"
+    )
 
-        if fname == "-":
-            solutions = parse_save_file(sys.stdin)
-        else:
-            with open(fname) as f:
-                solutions = parse_save_file(f)
+    def run_validate_all(args):
+        solutions = parse_save_file(args.save_file)
+
+        json_result = []
 
         for level in LEVELS:
             assert level.target_state == State.from_visualize(
                 level.target_state.visualize()
             )
             for slot, solution in solutions[level.level_id].items():
-                print(f"{level.level_name} (Slot {slot})")
                 result = simulate_solution(level, solution)
-                print(result.metrics)
-                if not result.metrics.is_correct:
-                    print("  Have         Want")
-                    print(
-                        "\n".join(
-                            a + "    " + b
-                            for a, b in zip(
-                                result.final_state.visualize().split("\n"),
-                                result.level.target_state.visualize().split("\n"),
-                            )
+                if args.json:
+                    json_result.append(
+                        dict(
+                            level_name=level.level_name,
+                            **dataclasses.asdict(result.metrics),
                         )
                     )
-                print()
-    elif op == "simulate":
-        if len(sys.argv) != 5:
-            print(USAGE)
-            sys.exit(1)
+                else:
+                    print(f"{level.level_name} (Slot {slot})")
+                    print(result.metrics)
+                    if not result.metrics.is_correct:
+                        print("  Have         Want")
+                        print(
+                            "\n".join(
+                                a + "    " + b
+                                for a, b in zip(
+                                    result.final_state.visualize().split("\n"),
+                                    result.level.target_state.visualize().split("\n"),
+                                )
+                            )
+                        )
+                        print()
 
-        level_name, slot, fname = sys.argv[2:]
+        if args.json:
+            print(json.dumps(json_result))
 
-        try:
-            level = get_level_from_name(level_name)
-            assert level is not None
-        except Exception:
-            print(f"Could not parse level name {level_name}")
-            print(USAGE)
-            sys.exit(1)
+    parser_validate_all.set_defaults(func=run_validate_all)
 
-        slot = int(slot)
+    parser_simulate = subparsers.add_parser("simulate", help="Simulate one save")
+    parser_simulate.add_argument(
+        "level_name",
+        type=get_level_from_name,
+        help='Use "1-2" for the 2nd level in the 1st column of the base game, or "B4-3" for the 3rd level in the 4th column of the bonus levels, or a bonus level name (e.g. "Clark"). Use "B5-3" or "editor" for the puzzle editor.',
+    )
+    parser_simulate.add_argument(
+        "slot_number",
+        type=int,
+        help="Use 0 for top-left, 1 for top-right, 2 for bottom-left, 3 for bottom-right",
+    )
+    parser_simulate.add_argument(
+        "save_file", type=argparse.FileType(), help="Save file path (or - for stdin)"
+    )
 
-        if fname == "-":
-            solutions = parse_save_file(sys.stdin)
-        else:
-            with open(fname) as f:
-                solutions = parse_save_file(f)
-
+    def run_simulate(args):
+        solutions = parse_save_file(args.save_file)
+        level = args.level_name
+        slot = args.slot_number
         if slot not in solutions[level.level_id]:
             print(f"No solution in slot {slot} for level {level.level_name}")
-            print("Slot should be 0, 1, 2, or 3 for top-left, top-right, bottom-left, or bottom-right")
+            print(
+                "Slot should be 0, 1, 2, or 3 for top-left, top-right, bottom-left, or bottom-right"
+            )
             sys.exit(1)
 
         solution = solutions[level.level_id][slot]
@@ -147,9 +153,11 @@ def main():
                 continue
             print(rule.reaction.name)
             print(rule.visualize())
-    else:
-        print(USAGE)
-        sys.exit(1)
+
+    parser_simulate.set_defaults(func=run_simulate)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
 if __name__ == "__main__":

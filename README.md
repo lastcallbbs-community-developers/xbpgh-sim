@@ -7,7 +7,7 @@ Path, a subgame of [Last Call BBS](https://zachtronics.com/last-call-bbs/).
 
 To validate and compute metrics for your own save file, use
 ```
-python -m main validate_all <save_file_path>
+python -m xbpgh_sim validate_all <save_file_path>
 ```
 Save files are usually located at:
 ```
@@ -18,13 +18,13 @@ Alternatively, use `-` as the path to read from stdin.
 
 To simulate/visualize a particular level, use
 ```
-python -m main simulate <level_name> <slot_number> <save_file_path>
+python -m xbpgh_sim simulate <level_name> <slot_number> <save_file_path>
 ```
-Run `python -m main` to see detailed format.
+Run `python -m xbpgh_sim` to see detailed format.
 
 Sample output:
 ```
-$ python -m main simulate 1-1 3 ~/.local/share/Last\ Call\ BBS/7...5/save.dat
+$ python -m xbpgh_sim simulate 1-1 3 ~/.local/share/Last\ Call\ BBS/7...5/save.dat
 1-1 (Slot 3)
 Metrics:
 is_correct = True
