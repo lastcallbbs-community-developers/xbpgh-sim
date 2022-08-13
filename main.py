@@ -129,6 +129,18 @@ def main():
                     )
                 )
             )
+        if not result.metrics.is_correct:
+            print("Incorrect solution:")
+            print("  Have         Want")
+            print(
+                "\n".join(
+                    a + "    " + b
+                    for a, b in zip(
+                        result.final_state.visualize().split("\n"),
+                        result.level.target_state.visualize().split("\n"),
+                    )
+                )
+            )
         print("Rules:")
         for rule in result.solution.rules:
             if rule.target_type == CellType.IGNORE:
