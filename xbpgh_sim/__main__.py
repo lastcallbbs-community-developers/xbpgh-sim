@@ -70,6 +70,7 @@ def main():
                     json_result.append(
                         dict(
                             level_name=level.level_name,
+                            level_id=level.level_id,
                             **(
                                 dict(solution=solution.save_string)
                                 if args.include_solution
