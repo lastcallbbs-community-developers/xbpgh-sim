@@ -86,6 +86,7 @@ def main():
 
         solution = solutions[level.level_id][slot]
         result = simulate_solution(level, solution)
+        print(f"{level.level_name} (Slot {slot})")
         print("Metrics:")
         for field in dataclasses.fields(Metrics):
             print(field.name, "=", getattr(result.metrics, field.name))
