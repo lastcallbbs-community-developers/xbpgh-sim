@@ -1,8 +1,8 @@
 import base64
 import zlib
 
-from models import *
-from levels import LEVELS
+from .models import *
+from .levels import LEVELS
 
 
 __all__ = ["parse_solution", "dump_solution", "parse_save_file"]

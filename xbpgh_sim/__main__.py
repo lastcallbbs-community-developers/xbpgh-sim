@@ -3,10 +3,10 @@ import sys
 import dataclasses
 from typing import Optional
 
-from models import *
-from savefile import *
-from levels import *
-from simulator import *
+from .models import *
+from .savefile import *
+from .levels import *
+from .simulator import *
 
 
 USAGE = """\

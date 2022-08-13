@@ -1,7 +1,7 @@
 from typing import Optional
 from copy import deepcopy
 
-from models import *
+from .models import *
 
 
 __all__ = ["simulate_step", "simulate_solution"]
