@@ -179,6 +179,10 @@ def simulate_solution(level: Level, solution: Solution) -> SimulationResult:
     final_state.live_cells = None
     is_correct = final_state == level.target_state
 
+    is_wasteful = num_waste > level.theoretical_min_waste
+    if is_correct:
+        assert num_waste >= level.theoretical_min_waste
+
     return SimulationResult(
         level=level,
         solution=solution,
@@ -192,5 +196,6 @@ def simulate_solution(level: Level, solution: Solution) -> SimulationResult:
             num_frames=num_frames,
             is_stable=is_stable,
             num_waste=num_waste,
+            is_wasteful=is_wasteful,
         ),
     )
