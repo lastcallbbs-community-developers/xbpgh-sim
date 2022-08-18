@@ -436,6 +436,7 @@ LEVELS = [
                 [False, False, False, False],
             ],
         ),
+        theoretical_min_waste=2,
     ),
     Level(
         level_id=10,
@@ -820,6 +821,7 @@ LEVELS = [
                 [False, False, False, False],
             ],
         ),
+        theoretical_min_waste=3,
     ),
     Level(
         level_id=19,
@@ -868,6 +870,7 @@ LEVELS = [
                 [True, False, False, True],
             ],
         ),
+        theoretical_min_waste=2,
     ),
     Level(
         level_id=20,
@@ -1252,6 +1255,7 @@ LEVELS = [
                 [False, True, True, False],
             ],
         ),
+        theoretical_min_waste=1,
     ),
     Level(
         level_id=28,

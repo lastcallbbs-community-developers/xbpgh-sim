@@ -367,6 +367,12 @@ class Level:
 
     target_state: State
 
+    # Theoretical min waste: for levels with at least 2 connected components of
+    # cells, there must be at least one waste cell either adjacent to or inside
+    # each connected component. The theoretical min waste is the minimum size
+    # of such a covering set.
+    theoretical_min_waste: int = 0
+
     can_place_metal: bool = False
 
 
@@ -378,6 +384,7 @@ class Metrics:
     num_frames: int
     is_stable: bool
     num_waste: int
+    is_wasteful: bool
 
 
 @dataclass
