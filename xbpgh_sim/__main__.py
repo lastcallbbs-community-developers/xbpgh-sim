@@ -71,8 +71,9 @@ def main():
                         dict(
                             level_name=level.level_name,
                             level_id=level.level_id,
+                            slot_id=slot,
                             **(
-                                dict(solution=solution.save_string)
+                                dict(solution=f"Toronto.Solution.{level.level_id}.0 = {solution.save_string}")
                                 if args.include_solution
                                 else {}
                             ),
@@ -80,7 +81,7 @@ def main():
                         )
                     )
                 else:
-                    print(f"{level.level_name} (Slot {slot})")
+                    print(f"{level.level_name} (Level ID {level.level_id}, Slot {slot})")
                     print(result.metrics)
                     if not result.metrics.is_correct:
                         print("  Have         Want")
