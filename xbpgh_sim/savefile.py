@@ -1,6 +1,5 @@
 import base64
 import zlib
-from typing import Optional
 
 from .models import *
 from .levels import LEVELS
@@ -9,21 +8,9 @@ from .levels import LEVELS
 __all__ = ["parse_solution", "dump_solution", "parse_save_file"]
 
 
-def parse_solution(save_string: str) -> Optional[Solution]:
+def parse_solution(save_string: str) -> Solution:
     """parses a decompressed solution"""
-    if " = " not in save_string:
-        return None
-
-    key, val = save_string.split(" = ")
-    key = key.split(".")
-    val = val.strip()
-    if not (key[0] == "Toronto" and key[1] == "Solution"):
-        return None
-
-    level_id = int(key[2])
-    slot_id = int(key[3])
-
-    dat = zlib.decompress(base64.b64decode(val, validate=True))
+    dat = zlib.decompress(base64.b64decode(save_string, validate=True))
 
     def pop_int(b):
         nonlocal dat
@@ -82,14 +69,7 @@ def parse_solution(save_string: str) -> Optional[Solution]:
 
     assert len(dat) == 0
 
-    return Solution(
-        level_id=level_id,
-        slot_id=slot_id,
-        rules=rules,
-        start_pos=start_loc,
-        metal_coords=metal_coords,
-        save_string=save_string,
-    )
+    return Solution(rules, start_loc, metal_coords, save_string=save_string)
 
 
 def dump_solution(solution: Solution) -> str:
@@ -132,19 +112,23 @@ def dump_solution(solution: Solution) -> str:
         push_int(4, coords.x)
         push_int(4, coords.y)
 
-    return f'Toronto.Solution.{solution.level_id}.{solution.slot_id} = {base64.b64encode(zlib.compress(dat, level=9)).decode("ascii")}'
+    return base64.b64encode(zlib.compress(dat)).decode("ascii")
 
 
 def parse_save_file(f) -> dict[int, dict[int, Solution]]:
     solutions = {level.level_id: {} for level in LEVELS}
     for line in f:
         line = line.rstrip("\n")
-        solution = parse_solution(line)
+        if " = " in line:
+            key, val = line.split(" = ")
+            key = key.split(".")
+            val = val.strip()
+            if key[0] == "Toronto" and key[1] == "Solution":
+                level_id = int(key[2])
+                save_slot = int(key[3])
 
-        if solution is None:
-            continue
-
-        # Check round-tripping the solution
-        # assert line == dump_solution(solution)
-        solutions[solution.level_id][solution.slot_id] = solution
+                solution = parse_solution(val)
+                # Check round-tripping the solution
+                # assert dat == dump_solution(solution)
+                solutions[level_id][save_slot] = solution
     return solutions
