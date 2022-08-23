@@ -256,9 +256,13 @@ class Rule:
 
 @dataclass
 class Solution:
+    level_id: int
+    slot_id: int
+
     rules: list[Rule]
     start_pos: Coords
     metal_coords: list[Coords]
+
     save_string: Optional[str] = None
 
 
